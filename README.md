@@ -175,14 +175,14 @@ Verified end-to-end in Claude Code (Opus) — `/mcp` shows the server
 connected, tools are discovered, and a natural-language prompt resolves to a
 real MCP tool call against the mock backend.
 
-<!-- TODO: replace the three placeholder filenames below with the actual
-     files committed under docs/screenshots/. Captions can stay as-is. -->
+![Claude Code /mcp showing devcontext server connected](docs/screenshots/01_mcp_status.png)
+*Claude Code `/mcp` showing devcontext server connected.*
 
-![/mcp connected — 6 tools + 1 resource](docs/screenshots/TODO-1.png)
+![Six MCP tools registered (analyze_error_log, search_past_incidents, propose_fix, search_codebase, find_examples, summarize_pr)](docs/screenshots/02_tools_list.png)
+*Six MCP tools registered: `analyze_error_log`, `search_past_incidents`, `propose_fix`, `search_codebase`, `find_examples`, `summarize_pr`.*
 
-![Tool discovery — devcontext tools listed in Claude Code](docs/screenshots/TODO-2.png)
-
-![Natural-language prompt → analyze_error_log → diagnosis](docs/screenshots/TODO-3.png)
+![Live tool call: Claude Code routes a stack trace to analyze_error_log and consumes the structured response](docs/screenshots/03_tool_call_demo.png)
+*Live tool call: Claude Code routes a stack trace to `analyze_error_log` and consumes the structured response.*
 
 ---
 
