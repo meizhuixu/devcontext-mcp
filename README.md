@@ -10,6 +10,12 @@
 
 ---
 
+## Status
+
+✅ Phase 1 complete — integrated and verified in Claude Code (Opus) with 6 tools + 1 resource live.
+
+---
+
 ## Why
 
 AI coding assistants are only as smart as the context they can pull in. Two
@@ -39,9 +45,9 @@ surface that ties the rest together.
                                                                           └──────────────────┘
 ```
 
-Phase 1 ships canned mock responses inside the server so Claude Desktop can
-talk to it without any backend running. See [ARCHITECTURE.md](./ARCHITECTURE.md)
-for the protocol-level diagram.
+Phase 1 ships canned mock responses inside the server so Claude Code (or any
+other MCP client) can talk to it without any backend running. See
+[ARCHITECTURE.md](./ARCHITECTURE.md) for the protocol-level diagram.
 
 ---
 
@@ -96,37 +102,64 @@ uv run devcontext-mcp
 
 ---
 
-## How to use with Claude Desktop
+## How to use with Claude Code
+
+This is the verified, recommended path. Phase 1 ships in mock mode so the
+6 tools + 1 resource respond without any backend running.
 
 1. Make sure `uv` and this repo are installed locally.
-2. Open (or create) the Claude Desktop config:
-   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-3. Merge the contents of [`examples/claude_desktop_config.json`](./examples/claude_desktop_config.json)
-   into your existing config (under the top-level `mcpServers` key). The
-   important entry is:
+2. Register the server with Claude Code (user scope, mock backend):
 
-   ```json
-   {
-     "mcpServers": {
-       "devcontext": {
-         "command": "uv",
-         "args": [
-           "--directory",
-           "/absolute/path/to/devcontext-mcp",
-           "run",
-           "devcontext-mcp"
-         ]
-       }
-     }
-   }
+   ```bash
+   claude mcp add devcontext \
+     -s user \
+     -e DEVCONTEXT_BACKEND_MODE=mock \
+     -- /opt/homebrew/bin/uv \
+     --directory <ABSOLUTE_PATH_TO_REPO> \
+     run devcontext-mcp
    ```
 
-   Replace `/absolute/path/to/devcontext-mcp` with the absolute path on your
-   machine (e.g. `/Users/yourname/Repo/devcontext-mcp`).
-4. Quit Claude Desktop completely (`Cmd+Q`) and re-open it.
-5. In any chat, click the tools icon — you should see the 6 `devcontext-*`
-   tools and the `devcontext://session` resource.
+   Replace `<ABSOLUTE_PATH_TO_REPO>` with the absolute path on your machine
+   (e.g. `/Users/yourname/Repo/devcontext-mcp`). On Linux or non-Homebrew
+   setups, swap `/opt/homebrew/bin/uv` for the output of `which uv`.
+
+3. Verify inside Claude Code:
+
+   ```
+   /mcp
+   ```
+
+   You should see something like:
+
+   ```
+   devcontext  ✔ connected   Capabilities: tools · resources   Tools: 6 tools
+   ```
+
+4. Try it with a natural-language prompt:
+
+   > Use the `analyze_error_log` tool from devcontext to diagnose this:
+   > `NullPointerException at User.java:42 ...`
+
+   Claude Code will pick the tool, call it over MCP, and turn the structured
+   mock response into a natural-language diagnosis and fix plan.
+
+If you don't see the server, run `claude mcp list` to confirm it was
+registered, and check that `<ABSOLUTE_PATH_TO_REPO>` points at the repo root
+(the directory containing `pyproject.toml`).
+
+## How to use with Claude Desktop (alternative)
+
+Claude Desktop is supported as a secondary path; the integration is the same
+but configured via JSON instead of `claude mcp add`.
+
+1. Open (or create) the Claude Desktop config:
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+2. Merge the contents of [`examples/claude_desktop_config.json`](./examples/claude_desktop_config.json)
+   into your existing config (under the top-level `mcpServers` key), replacing
+   the `--directory` value with the absolute path to this repo.
+3. Quit Claude Desktop completely (`Cmd+Q`) and re-open it.
+4. In any chat, click the tools icon — you should see the 6 tools + 1 resource.
 
 If a tool doesn't show up, check the Claude Desktop log:
 
@@ -134,18 +167,30 @@ If a tool doesn't show up, check the Claude Desktop log:
 tail -f ~/Library/Logs/Claude/mcp*.log
 ```
 
-## How to use with Claude Code
+---
 
-Claude Code reads MCP servers from `~/.claude/mcp_servers.json` (or the
-project-local `.mcp.json`). Add the same block as above. Restart with
-`claude mcp list` to verify.
+## Live Demo
+
+Verified end-to-end in Claude Code (Opus) — `/mcp` shows the server
+connected, tools are discovered, and a natural-language prompt resolves to a
+real MCP tool call against the mock backend.
+
+<!-- TODO: replace the three placeholder filenames below with the actual
+     files committed under docs/screenshots/. Captions can stay as-is. -->
+
+![/mcp connected — 6 tools + 1 resource](docs/screenshots/TODO-1.png)
+
+![Tool discovery — devcontext tools listed in Claude Code](docs/screenshots/TODO-2.png)
+
+![Natural-language prompt → analyze_error_log → diagnosis](docs/screenshots/TODO-3.png)
 
 ---
 
 ## Status & Roadmap
 
 - ✅ **Phase 1 (current)** — server scaffolded, 6 tools + 1 resource, mock
-  responses, CI green, Claude Desktop integration verified.
+  responses, CI green, integration verified live in Claude Code (Opus);
+  Claude Desktop also supported.
 - 🚧 **Phase 2** — replace mock clients with real `httpx` calls to Auto
   Sentinel and DevDocs RAG. Add retry/backoff and structured logging.
 - 🔮 **Phase 3** — HTTP/SSE transport, OAuth, multi-tenant session resource.

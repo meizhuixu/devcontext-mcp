@@ -9,7 +9,7 @@ on **devcontext-mcp**. Read it end-to-end before touching code.
 
 `devcontext-mcp` is a **Model Context Protocol (MCP) server** that exposes the
 capabilities of two upstream services as tools/resources to MCP clients
-(Claude Desktop, Claude Code, Cursor):
+(Claude Code, Claude Desktop, Cursor):
 
 1. **Auto Sentinel** (project 1) — incident triage / fix proposal agent.
 2. **DevDocs RAG** (project 2) — code + docs semantic retrieval.
@@ -22,9 +22,9 @@ to backend HTTP services and returns structured results.
 
 ## Phase 1 scope (this phase)
 
-- MCP server runs over **stdio** transport (so Claude Desktop / Claude Code
+- MCP server runs over **stdio** transport (so Claude Code / Claude Desktop
   can spawn it).
-- Registers **7 tools + 1 resource** (all mocked — no real backend calls).
+- Registers **6 tools + 1 resource** (all mocked — no real backend calls).
 - `mcp dev src/devcontext_mcp/server.py` lists all tools.
 - `pytest` green, `ruff` + `mypy` clean.
 - Out of scope: real backend integration, auth, streaming, sampling, prompts.
@@ -156,7 +156,7 @@ devcontext-mcp/
 │       ├── auto_sentinel.py     # Phase 1: in-memory mock
 │       └── devdocs.py           # Phase 1: in-memory mock
 ├── tests/
-│   ├── test_smoke.py            # server constructs + lists 7 tools
+│   ├── test_smoke.py            # server constructs + lists 6 tools + 1 resource
 │   └── test_tools.py            # one test per tool (happy path)
 ├── examples/
 │   └── claude_desktop_config.json
