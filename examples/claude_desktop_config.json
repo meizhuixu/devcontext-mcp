@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "devcontext": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/absolute/path/to/devcontext-mcp",
+        "run",
+        "devcontext-mcp"
+      ],
+      "env": {
+        "DEVCONTEXT_BACKEND_MODE": "mock"
+      }
+    }
+  }
+}
