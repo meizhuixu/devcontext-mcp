@@ -35,6 +35,10 @@ async def test_analyze_error_log(sentinel: AutoSentinelClient) -> None:
     assert out.category in {"runtime", "build", "infra", "config", "unknown"}
     assert out.severity in {"low", "medium", "high", "critical"}
     assert out.summary
+    # Phase 2 contract: expose the backend incident id so propose_fix can
+    # chain off it, plus a completion status for slow pipeline runs.
+    assert out.status == "completed"
+    assert len(out.incident_id) == 32
 
 
 @pytest.mark.asyncio
