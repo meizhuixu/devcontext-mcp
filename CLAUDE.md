@@ -213,3 +213,16 @@ uv run mypy src
   and DevDocs RAG. Add retry/backoff.
 - **Phase 3**: HTTP/SSE transport, OAuth, multi-tenant session resource.
 - **Phase 4**: Cursor-specific tool packaging, telemetry, rate limiting.
+
+---
+
+## Docs maintenance (PROJECT.md / DEBT.md)
+
+- `docs/PROJECT.md` is the project-context doc + status snapshot. Whenever a
+  code change lands as a PR, update its "当前状态（快照）" section in the same
+  PR (current phase, key outcomes).
+- `DEBT.md` is the technical debt register: add an entry inline when new debt
+  surfaces while coding; flip `[ ]` → `[X]` in the same commit that lands the
+  fix (keep the entry, do not delete it).
+- Authoritative progress stays in `git log` + `DEBT.md` — PROJECT.md is a
+  snapshot / entry point, not the source of truth.
