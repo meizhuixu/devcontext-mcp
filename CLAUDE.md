@@ -20,14 +20,21 @@ to backend HTTP services and returns structured results.
 
 ---
 
-## Phase 1 scope (this phase)
+## Phase 2 scope (this phase)
 
-- MCP server runs over **stdio** transport (so Claude Code / Claude Desktop
-  can spawn it).
-- Registers **6 tools + 1 resource** (all mocked — no real backend calls).
-- `mcp dev src/devcontext_mcp/server.py` lists all tools.
-- `pytest` green, `ruff` + `mypy` clean.
-- Out of scope: real backend integration, auth, streaming, sampling, prompts.
+- Everything from Phase 1 (stdio transport, 6 tools + 1 resource, green
+  gates) still holds.
+- `DEVCONTEXT_BACKEND_MODE=http` drives **real HTTP calls**: tools 1–3 →
+  auto-sentinel (`AUTO_SENTINEL_URL`, default `http://localhost:8001`),
+  tools 4–5 → devdocs-rag (`DEVDOCS_RAG_URL`, default `http://localhost:8002`).
+  Both backends need their `feat/m4-mcp-enabler` API additions.
+- Tool 6 (`summarize_pr`) has no backend endpoint — stays mock-labelled
+  (descoped, tracked in DEBT.md). Default mode remains `mock`.
+- trace propagation: MCP generates a 32-hex trace id per `analyze_error_log`
+  call and sends it as `X-Trace-Id`; auto-sentinel adopts it and owns the
+  parent Langfuse trace (decision record in DEBT.md).
+- Out of scope: auth, HTTP/SSE transport for the MCP server itself,
+  sampling, prompts, devdocs-side trace injection.
 
 ---
 
@@ -62,10 +69,18 @@ into FastMCP via `@mcp.tool()`.
 - **Input**:
   - `log: str` — raw error log (required, non-empty)
 - **Output**:
-  - `category: Literal["runtime", "build", "infra", "config", "unknown"]`
-  - `severity: Literal["low", "medium", "high", "critical"]`
+  - `incident_id: str` — backend incident/trace id (32-char lowercase hex);
+    feed to `propose_fix` (Phase 2 addition)
+  - `status: Literal["completed", "processing"]` — `processing` when the
+    upstream pipeline (~45s) exceeded the wait budget (Phase 2 addition)
+  - `category: Literal["runtime", "build", "infra", "config", "unknown"] | None`
+  - `severity: Literal["low", "medium", "high", "critical"] | None`
+    (both `None` only while `status="processing"`)
   - `summary: str` — one-paragraph human-readable diagnosis
 - **Errors**: empty `log` → `ValueError` (MCP returns tool error).
+- **HTTP** (Phase 2): `POST /api/v1/alerts` with a client-generated
+  `X-Trace-Id` header, then polls `GET /api/v1/alerts/{id}` up to
+  `analyze_timeout_s` (default 120s).
 - **Mock**: returns `category="runtime"`, `severity="medium"`,
   `summary="Mock diagnosis: NullPointerException in user-service."`
 
@@ -86,6 +101,9 @@ into FastMCP via `@mcp.tool()`.
   - `fix_plan: str`
   - `risk_level: Literal["low", "medium", "high"]`
   - `code_diff: str` — unified diff (may be empty if no code change)
+- **HTTP** (Phase 2): `GET /api/v1/alerts/{error_id}`; `error_id` is the
+  `incident_id` from `analyze_error_log` (or `search_past_incidents`).
+  Unknown id → `ValueError`; still processing → `RuntimeError`.
 - **Mock**: returns canned plan + a 5-line diff.
 
 ### From DevDocs RAG
@@ -97,6 +115,10 @@ into FastMCP via `@mcp.tool()`.
   - `repo: str | None = None` — optional repo filter (`owner/name`)
 - **Output**: `results: list[CodeHit]` where `CodeHit` =
   `{ file: str, line: int, snippet: str, score: float }` (score in `[0,1]`)
+- **HTTP** (Phase 2): `POST /query/stream` (SSE) with `retrieval_only=true`;
+  consumes the `retrieved` event only. `repo` maps to a devdocs namespace
+  (`owner/some-name` → `repo_some_name`). `line` = chunk `start_line`
+  (1 when absent, e.g. doc chunks); rerank scores are clamped to `[0,1]`.
 - **Mock**: returns 3 hits with scores `0.91 / 0.84 / 0.72`.
 
 #### 5. `find_examples`
@@ -104,6 +126,9 @@ into FastMCP via `@mcp.tool()`.
 - **Input**: `api_name: str` (e.g., `"requests.post"`, `"asyncio.gather"`)
 - **Output**: `examples: list[Example]` where `Example` =
   `{ repo: str, file: str, code: str }`
+- **HTTP** (Phase 2): same `/query/stream` retrieval as `search_codebase`
+  (devdocs has no dedicated symbol endpoint); keeps only
+  `chunk_type == "code"` chunks, max 5. `repo` is the devdocs namespace.
 - **Mock**: returns 2 examples.
 
 #### 6. `summarize_pr`
@@ -114,6 +139,9 @@ into FastMCP via `@mcp.tool()`.
   - `changed_files: list[str]`
   - `key_changes: list[str]`
 - **Errors**: malformed URL → validation error.
+- **HTTP** (Phase 2): **no backend endpoint exists — descoped in M4**
+  (see DEBT.md). http mode returns the canned payload with the summary
+  prefixed `[mock — no real backend yet]` and never hits the network.
 - **Mock**: returns canned summary.
 
 ### MCP resource
