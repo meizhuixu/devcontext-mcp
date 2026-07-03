@@ -18,8 +18,9 @@
   - 依赖两个后端的 `feat/m4-mcp-enabler` 分支（**均未合并、未 push**）：auto-sentinel
     新增 GET alerts/{id} + incidents 搜索 + X-Trace-Id 入口（470 tests 绿）；devdocs-rag
     新增 retrieval_only + line/chunk_type 字段（145 tests 绿）。
-- ⏳ **M4 剩余**：Claude Code 会话内实测（MCP 配置已切 http，待 reconnect）+ Cursor 双端验证；
-  两个 enabler 分支的 merge/push 需 owner 确认。
+- ✅ **M4 完成标准达成**（2026-07-03）：Claude Code 会话内经真实 MCP 连接走通
+  `analyze_error_log` → `propose_fix`，trace `b98f7334…` 进 Langfuse（单父 4 generation）。
+- ⏳ 遗留：Cursor 验证（DEBT 在册）；两个 enabler 分支 + 本仓库 main 的 push/merge 需 owner 确认。
 
 ---
 
@@ -60,7 +61,8 @@ Python 3.11+ / `mcp` SDK / Pydantic v2 / mypy --strict + ruff / pytest / GitHub 
 2. ✅ trace_id 跨服务透传定案：**自定义 `X-Trace-Id`**（32-hex 直传，弃 Traceparent；
    MCP 生成 id、sentinel 入口采纳并自己 `open_parent_trace`，parent 归属留在 sentinel，
    避开 orphan generation 坑）。实测 trace `fdd45304…` 单父 4 generation 进 Langfuse。
-3. ⏳ Claude Code 会话内实测（配置已切 http，待 reconnect）+ Cursor 集成测试
+3. ✅ Claude Code 会话内实测通过（reconnect 后真实 MCP 调用链 + Langfuse trace `b98f7334…`）；
+   Cursor 集成测试仍开放（见 DEBT.md）
 
 ## 后续可加（非必须）
 
