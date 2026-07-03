@@ -44,8 +44,22 @@ def build_server(settings: Settings | None = None) -> FastMCP:
     cfg = settings or get_settings()
     mock = cfg.backend_mode == "mock"
 
-    sentinel = AutoSentinelClient(cfg.auto_sentinel_url, mock=mock)
-    devdocs = DevDocsClient(cfg.devdocs_rag_url, mock=mock)
+    sentinel = AutoSentinelClient(
+        cfg.auto_sentinel_url,
+        mock=mock,
+        timeout_s=cfg.request_timeout_s,
+        analyze_timeout_s=cfg.analyze_timeout_s,
+        poll_interval_s=cfg.poll_interval_s,
+        retry_attempts=cfg.retry_attempts,
+        retry_backoff_s=cfg.retry_backoff_s,
+    )
+    devdocs = DevDocsClient(
+        cfg.devdocs_rag_url,
+        mock=mock,
+        timeout_s=cfg.request_timeout_s,
+        retry_attempts=cfg.retry_attempts,
+        retry_backoff_s=cfg.retry_backoff_s,
+    )
 
     mcp = FastMCP("devcontext-mcp")
 

@@ -17,8 +17,14 @@ class AnalyzeErrorInput(BaseModel):
 
 
 class AnalyzeErrorOutput(BaseModel):
-    category: Category
-    severity: Severity
+    incident_id: str = Field(
+        description="Backend incident/trace id (32-char lowercase hex); pass to propose_fix."
+    )
+    status: Literal["completed", "processing"] = Field(
+        description="'processing' when the pipeline exceeded the wait budget; retry later."
+    )
+    category: Category | None
+    severity: Severity | None
     summary: str
 
 

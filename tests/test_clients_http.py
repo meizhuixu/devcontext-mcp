@@ -108,7 +108,12 @@ async def test_diagnose_waits_through_processing() -> None:
         if request.method == "POST":
             return httpx.Response(
                 202,
-                json={"job_id": "a" * 32, "status": "accepted", "message": "q", "trace_id": "a" * 32},
+                json={
+                    "job_id": "a" * 32,
+                    "status": "accepted",
+                    "message": "q",
+                    "trace_id": "a" * 32,
+                },
             )
         calls["gets"] += 1
         if calls["gets"] < 3:
@@ -138,7 +143,12 @@ async def test_diagnose_returns_processing_on_timeout() -> None:
         if request.method == "POST":
             return httpx.Response(
                 202,
-                json={"job_id": "b" * 32, "status": "accepted", "message": "q", "trace_id": "b" * 32},
+                json={
+                    "job_id": "b" * 32,
+                    "status": "accepted",
+                    "message": "q",
+                    "trace_id": "b" * 32,
+                },
             )
         return httpx.Response(
             200,
@@ -166,7 +176,12 @@ async def test_diagnose_failed_run_raises_runtime_error() -> None:
         if request.method == "POST":
             return httpx.Response(
                 202,
-                json={"job_id": "c" * 32, "status": "accepted", "message": "q", "trace_id": "c" * 32},
+                json={
+                    "job_id": "c" * 32,
+                    "status": "accepted",
+                    "message": "q",
+                    "trace_id": "c" * 32,
+                },
             )
         return httpx.Response(
             200,
@@ -199,7 +214,11 @@ async def test_search_incidents_maps_query_params() -> None:
             200,
             json={
                 "incidents": [
-                    {"id": "d" * 32, "title": "KeyError in payment-service", "resolution": "Use .get()"},
+                    {
+                        "id": "d" * 32,
+                        "title": "KeyError in payment-service",
+                        "resolution": "Use .get()",
+                    },
                 ]
             },
         )
@@ -315,17 +334,8 @@ RETRIEVED_CHUNKS = {
 
 
 def _sse_response(request: httpx.Request, payload: dict[str, Any]) -> httpx.Response:
-    body = (
-        "event: retrieved\n"
-        f"data: {json.dumps(payload)}\n"
-        "\n"
-        "event: done\n"
-        "data: \n"
-        "\n"
-    )
-    return httpx.Response(
-        200, content=body.encode(), headers={"content-type": "text/event-stream"}
-    )
+    body = f"event: retrieved\ndata: {json.dumps(payload)}\n\nevent: done\ndata: \n\n"
+    return httpx.Response(200, content=body.encode(), headers={"content-type": "text/event-stream"})
 
 
 async def test_search_codebase_consumes_retrieved_event() -> None:

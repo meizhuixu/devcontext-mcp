@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     devdocs_rag_url: str = Field(default="http://localhost:8002")
     backend_mode: BackendMode = Field(default="mock", alias="DEVCONTEXT_BACKEND_MODE")
 
+    # HTTP behaviour (Phase 2, backend_mode="http")
+    request_timeout_s: float = Field(default=30.0)
+    analyze_timeout_s: float = Field(default=120.0, description="Wait budget for diagnose polling.")
+    poll_interval_s: float = Field(default=2.0)
+    retry_attempts: int = Field(default=3, ge=1)
+    retry_backoff_s: float = Field(default=0.2, ge=0.0)
+
 
 def get_settings() -> Settings:
     """Build a fresh ``Settings`` instance.
