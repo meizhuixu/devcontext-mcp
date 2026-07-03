@@ -6,13 +6,20 @@
 
 ---
 
-## 当前状态（快照 2026-07-03）
+## 当前状态（快照 2026-07-03，M4 代码完成）
 
-- ✅ **Phase 1 完成**（2026-04-28），main 干净且与远端同步。6 tool + 1 resource 全部注册，
-  Claude Code 实地集成验证通过（`/mcp` 列出 devcontext、Opus 主动调 tool、结构化返回进对话）。
-- ⏳ **Phase 2 待启动**：mock → 真实 HTTP 后端。前置条件：项目 1 Sprint 5 ✅（已完成）+
-  项目 2 Phase 6（未启动）。矩阵串行顺序里本项目排最后，**不要提前动**。
-- Phase 2 待办细项见 `DEBT.md`（本次新建）。
+- ✅ **Phase 1 完成**（2026-04-28）。6 tool + 1 resource 全部注册，Claude Code 实地集成验证通过。
+- ✅ **Phase 2（M4）代码完成 + 程序化实测通过**（2026-07-03，本地 commit 未 push）：
+  - 5/6 tool 在 `DEVCONTEXT_BACKEND_MODE=http` 下真调用后端（`summarize_pr` 无后端端点，
+    降级保留 mock 并显式标注，见 DEBT.md）。接口先行设计兑现：只改 clients 层 +
+    `analyze_error_log` 输出增量扩展（`incident_id`/`status`）。
+  - **trace_id 透传定案：自定义 `X-Trace-Id`**（弃 W3C Traceparent，理由见 DEBT.md）。
+    实测：MCP 生成的 id 成为 Langfuse parent trace（`fdd45304…`，4 个 generation 嵌套）。
+  - 依赖两个后端的 `feat/m4-mcp-enabler` 分支（**均未合并、未 push**）：auto-sentinel
+    新增 GET alerts/{id} + incidents 搜索 + X-Trace-Id 入口（470 tests 绿）；devdocs-rag
+    新增 retrieval_only + line/chunk_type 字段（145 tests 绿）。
+- ⏳ **M4 剩余**：Claude Code 会话内实测（MCP 配置已切 http，待 reconnect）+ Cursor 双端验证；
+  两个 enabler 分支的 merge/push 需 owner 确认。
 
 ---
 
@@ -26,16 +33,17 @@ MCP (Model Context Protocol) server，把 Auto Sentinel（项目 1）和 DevDocs
 
 | # | Name | 来自 | 状态 |
 |---|---|---|---|
-| 1 | `analyze_error_log(log)` | Auto Sentinel | mock |
-| 2 | `search_past_incidents(query, limit)` | Auto Sentinel | mock |
-| 3 | `propose_fix(error_id)` | Auto Sentinel | mock |
-| 4 | `search_codebase(query, repo)` | DevDocs RAG | mock |
-| 5 | `find_examples(api_name)` | DevDocs RAG | mock |
-| 6 | `summarize_pr(pr_url)` | DevDocs RAG | mock |
+| 1 | `analyze_error_log(log)` | Auto Sentinel | ✅ http（X-Trace-Id 注入 + 轮询） |
+| 2 | `search_past_incidents(query, limit)` | Auto Sentinel | ✅ http |
+| 3 | `propose_fix(error_id)` | Auto Sentinel | ✅ http |
+| 4 | `search_codebase(query, repo)` | DevDocs RAG | ✅ http（SSE retrieval_only） |
+| 5 | `find_examples(api_name)` | DevDocs RAG | ✅ http（code chunk 过滤） |
+| 6 | `summarize_pr(pr_url)` | DevDocs RAG | mock（无后端端点，降级，见 DEBT） |
 | R | `devcontext://session` | 内置 | mock |
 
-**Phase 1 关键事实**：6 tool 全部 mock（返回写死的字典结构）。接口先行设计——换真实 backend
-只改 `tools/<name>.py` 函数体，MCP client 端零修改。
+**关键事实**：默认 `DEVCONTEXT_BACKEND_MODE=mock`（零外部依赖）；`http` 模式走真后端。
+接口先行设计兑现——Phase 2 只改了 `clients/` 层，tool schema 与 MCP 注册零修改
+（除 `analyze_error_log` 输出的增量扩展）。
 
 ## 关键技术
 
@@ -46,13 +54,13 @@ schema）/ mypy --strict / 9 smoke + 单元测试，CI gating
 
 Python 3.11+ / `mcp` SDK / Pydantic v2 / mypy --strict + ruff / pytest / GitHub Actions / uv
 
-## Phase 2 范围（待启动）
+## Phase 2 范围（M4）
 
-1. 6 tool 函数体 mock → 真实 HTTP 调用 auto-sentinel 和 devdocs-rag
-2. trace_id 跨服务透传（MCP → Auto Sentinel）——W3C `Traceparent` header 还是自定义
-   `X-Trace-Id`，Phase 2 实测决定。注意上游约定：trace_id 是 32-char lowercase hex
-   （auto-sentinel 入口生成，OTel 兼容）
-3. Cursor 集成测试（目前只在 Claude Code 验证过）
+1. ✅ tool mock → 真实 HTTP 调用（5/6；`summarize_pr` 降级见 DEBT.md）
+2. ✅ trace_id 跨服务透传定案：**自定义 `X-Trace-Id`**（32-hex 直传，弃 Traceparent；
+   MCP 生成 id、sentinel 入口采纳并自己 `open_parent_trace`，parent 归属留在 sentinel，
+   避开 orphan generation 坑）。实测 trace `fdd45304…` 单父 4 generation 进 Langfuse。
+3. ⏳ Claude Code 会话内实测（配置已切 http，待 reconnect）+ Cursor 集成测试
 
 ## 后续可加（非必须）
 

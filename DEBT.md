@@ -12,13 +12,17 @@ Debt here is anchored to the phase roadmap (Phase 1 mock server complete → Pha
 
 ## Phase 2 Anchors (real backend integration)
 
-- [ ] **All 6 tools are mocks**: every `tools/<name>.py` returns a hard-coded dict. Phase 2
+- [X] **All 6 tools are mocks**: every `tools/<name>.py` returns a hard-coded dict. Phase 2
   replaces function bodies with real HTTP calls to auto-sentinel (tools 1-3) and devdocs-rag
   (tools 4-6). Interface-first design means the Pydantic schemas and MCP registration stay
   untouched. Gated on: devdocs-rag Phase 6 completing (auto-sentinel Sprint 5 is already done).
   Do NOT wire real backends before Phase 2 formally starts.
+  **Resolved 2026-07-03 (0500e13, live-verified same day)**: 5 of 6 tools drive real backends
+  in `DEVCONTEXT_BACKEND_MODE=http` (interface-first held — only client bodies changed, plus an
+  additive `incident_id`/`status` extension on `analyze_error_log`). Requires both backends'
+  `feat/m4-mcp-enabler` branches. `summarize_pr` remains mock — tracked in its own entry below.
 
-- [ ] **trace_id propagation header undecided**: MCP → auto-sentinel calls must carry the
+- [X] **trace_id propagation header undecided**: MCP → auto-sentinel calls must carry the
   trace_id (32-char lowercase hex, generated at auto-sentinel's incident entrypoint, OTel
   compatible). W3C `Traceparent` vs custom `X-Trace-Id` — decide empirically during Phase 2 and
   record the decision here + in `docs/PROJECT.md`.
@@ -28,8 +32,10 @@ Debt here is anchored to the phase roadmap (Phase 1 mock server complete → Pha
   MCP generates the id per `analyze_error_log` call; auto-sentinel adopts it as
   job_id == trace_id == incident_id and opens the parent Langfuse trace itself (parent-trace
   ownership stays at the sentinel entrypoint, avoiding the orphan-generation gotcha from
-  llmops-dashboard docs/onboarding.md "Trace Ownership"). Client side landed in 0500e13;
-  checkbox flips once the live end-to-end trace is verified in Langfuse.
+  llmops-dashboard docs/onboarding.md "Trace Ownership"). Client side landed in 0500e13.
+  **Live-verified 2026-07-03**: MCP-generated id `fdd45304fa19a3f05d43c4159ad3fc97` became the
+  Langfuse parent trace with 4 nested generations (diagnosis/supervisor/code_fixer/
+  security_reviewer), tokens + CNY cost recorded.
 
 - [ ] **Cursor integration untested**: live verification so far is Claude Code only. Phase 2
   should repeat the `/mcp` + tool-invocation verification in Cursor.
