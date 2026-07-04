@@ -6,7 +6,7 @@
 
 ---
 
-## 当前状态（快照 2026-07-03，M4 代码完成）
+## 当前状态（快照 2026-07-04，M4 全部收口）
 
 - ✅ **Phase 1 完成**（2026-04-28）。6 tool + 1 resource 全部注册，Claude Code 实地集成验证通过。
 - ✅ **Phase 2（M4）代码完成 + 程序化实测通过**（2026-07-03，本地 commit 未 push）：
@@ -15,12 +15,13 @@
     `analyze_error_log` 输出增量扩展（`incident_id`/`status`）。
   - **trace_id 透传定案：自定义 `X-Trace-Id`**（弃 W3C Traceparent，理由见 DEBT.md）。
     实测：MCP 生成的 id 成为 Langfuse parent trace（`fdd45304…`，4 个 generation 嵌套）。
-  - 依赖两个后端的 `feat/m4-mcp-enabler` 分支（**均未合并、未 push**）：auto-sentinel
-    新增 GET alerts/{id} + incidents 搜索 + X-Trace-Id 入口（470 tests 绿）；devdocs-rag
-    新增 retrieval_only + line/chunk_type 字段（145 tests 绿）。
+  - 两个后端的 `feat/m4-mcp-enabler` 分支**已合入各自 main 并推送**（2026-07-03：
+    sentinel 481 tests / devdocs 145 tests 绿，CI 绿），8001/8002 后端从 main 起服务。
 - ✅ **M4 完成标准达成**（2026-07-03）：Claude Code 会话内经真实 MCP 连接走通
   `analyze_error_log` → `propose_fix`，trace `b98f7334…` 进 Langfuse（单父 4 generation）。
-- ⏳ 遗留：Cursor 验证（DEBT 在册）；两个 enabler 分支 + 本仓库 main 的 push/merge 需 owner 确认。
+- ✅ **Cursor 双客户端验证通过**（2026-07-04，owner 操作）：Cursor MCP 配置接入，会话内
+  真实驱动流水线（incident `a4d02828…`）并正确消费结构化返回。Phase 2 无遗留（除
+  `summarize_pr` 降级与 devdocs trace 注入两条在册 DEBT，均为长期锚点）。
 
 ---
 

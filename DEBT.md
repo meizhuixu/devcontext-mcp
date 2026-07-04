@@ -37,8 +37,13 @@ Debt here is anchored to the phase roadmap (Phase 1 mock server complete → Pha
   Langfuse parent trace with 4 nested generations (diagnosis/supervisor/code_fixer/
   security_reviewer), tokens + CNY cost recorded.
 
-- [ ] **Cursor integration untested**: live verification so far is Claude Code only. Phase 2
+- [X] **Cursor integration untested**: live verification so far is Claude Code only. Phase 2
   should repeat the `/mcp` + tool-invocation verification in Cursor.
+  **Resolved (2026-07-04, owner-operated)**: devcontext added to Cursor's MCP config; in-chat
+  invocation drove the real backend end-to-end — `analyze_error_log` ran a fresh sentinel
+  pipeline (incident `a4d02828c24d86dcb74c364b5ff0cab5`) and `propose_fix`/`search_codebase`
+  returned structured results Cursor consumed correctly. Both first-party MCP clients
+  (Claude Code + Cursor) are now live-verified.
 
 - [ ] **`summarize_pr` has no real backend (descoped from M4, 2026-07-03)**: devdocs-rag has no
   PR endpoint and no PR-fetching code at all; building one (GitHub API + LLM summarize) was cut
